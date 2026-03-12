@@ -1,4 +1,4 @@
-**
+/**
 * Login script for geleisure.perfectgym.com.au based on HAR analysis.
 *
  * Usage: node gesac.js
@@ -32,7 +32,7 @@ try {
 // Credentials extracted from the HAR file request body
 const credentials = {
   "RememberMe": false,
-  "Login": process.env.GESAC_LOGIN ? process.env.GESAC_LOGIN.trim() : tim@cyberlanes.com.au,
+  "Login": process.env.GESAC_LOGIN ? process.env.GESAC_LOGIN.trim() : "tim@cyberlanes.com.au",
   "Password": process.env.GESAC_PASSWORD ? process.env.GESAC_PASSWORD.trim() : "Leeroyx1966"
 };
 console.log('Using credentials:', { ...credentials, Password: credentials.Password ? '******' : undefined });
@@ -111,20 +111,18 @@ async function login() {
     }
 
     if (jwtToken || hasAuthCookie) {
-      console.log('\n✅ Login Successful!');
-      const loginTimestamp = new Date().toISOString();
-      lastLoginTimestamp = loginTimestamp;
-      console.log('Timestamp:', loginTimestamp);
-      if (jwtToken) console.log('JWT Token:', jwtToken);
-      if (hasAuthCookie) console.log('Auth Cookie detected (CpAuthToken).');
-
-      // Example of how to use this token in a subsequent request
-      // console.log('\nTo make authenticated requests, use header:');
-      // console.log(`Authorization: Bearer ${jwtToken}`);
+        console.log('\n✅ Login Successful!');
+        const loginTimestamp = new Date().toISOString();
+        lastLoginTimestamp = loginTimestamp;
+        console.log('Timestamp:', loginTimestamp);
+        if (jwtToken) console.log('JWT Token:', jwtToken);
+        if (hasAuthCookie) console.log('Auth Cookie detected (CpAuthToken).');
     } else {
-      console.log('\n⚠️ Login might have failed. No jwt-token header or CpAuthToken cookie found.');
-      if (responseBody) console.log('Response Body:', JSON.stringify(responseBody, null, 2));
-      console.log('Response Headers:', [...response.headers.entries()]);
+        console.log('\n⚠️ Login might have failed. No jwt-token header or CpAuthToken cookie found.');
+        if (responseBody){
+            console.log('Response Body:', JSON.stringify(responseBody, null, 2));
+            console.log('Response Headers:', [...response.headers.entries()]);
+        }
     }
 
     if (cookies) {
@@ -134,6 +132,7 @@ async function login() {
 
 async function fetchGymClasses(url, payload) {
   let jsonClassid = null;
+    let classData = null;
   try {
     const response = await fetch(url, {
       method: 'POST',
@@ -153,22 +152,22 @@ async function fetchGymClasses(url, payload) {
       throw new Error(`HTTP ${response.status}: ${errorText}`);
     }
 
-const data = await response.json();
+    const data = await response.json();
 
     // 2. Expand/Flatten the nested Classes array
-const expandedClasses = data.CalendarData.flatMap(hourBlock =>
-      hourBlock.Classes.map(c => ({
-        classId: c.Id,
-        status: c.Status,
-        title: c.Name,
-        instructor: c.TrainerName,
-        start: c.StartTime,
-        end: c.EndTime,
-        slotsAvailable: c.AvailableSlots,
-        isBooked: c.IsBooked,
-        bookingStatus: c.BookingStatus
-      }))
-    );
+    const expandedClasses = data.CalendarData.flatMap(hourBlock =>
+          hourBlock.Classes.map(c => ({
+            classId: c.Id,
+            status: c.Status,
+            title: c.Name,
+            instructor: c.TrainerName,
+            start: c.StartTime,
+            end: c.EndTime,
+            slotsAvailable: c.AvailableSlots,
+            isBooked: c.IsBooked,
+            bookingStatus: c.BookingStatus
+          }))
+        );
 
     const startDate = payload.date;
     const targetTitle = eventName; // Replace with the actual class title you're looking for
@@ -178,29 +177,64 @@ const expandedClasses = data.CalendarData.flatMap(hourBlock =>
       c.start === formattedTime && c.title === targetTitle
     );
 
-console.log("Match Found:");
-console.log(JSON.stringify(filteredClasses, null, 2));
-
-   if (fs.status === 'Bookable') {
-    jsonClassid = filteredClasses.map(c => c.classId);
-    }
-    else
-    {
-      jsonClassid = "notbookable";
-      console.log("Class is not bookable. Status:", fs.status);
-    }
+    console.log("Match Found:");
+    console.log(JSON.stringify(filteredClasses, null, 2));
+    classData = JSON.parse(JSON.stringify(filteredClasses, null, 2));
+    console.log(classData);
 
   } catch (error) {
     console.error('Fetch Error:', error.message);
   }
-  return jsonClassid;
+
+  return JSON.stringify(classData);
+}
+
+async function bookGymClass(url, payload) {
+  let returnBookStatus = null;
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json, text/plain, */*',
+        'Authorization': `Bearer ${jwtToken}`,
+        'X-Requested-With': 'XMLHttpRequest',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP ${response.status}: ${errorText}`);
+    }
+
+    const data = await response.json();
+    console.log("booking Data: ", data);
+    const jsonData = JSON.stringify(data);
+    console.log("booking Data2: ", jsonData);
+    const userId = jsonData.UserId;
+    const userId2 = data.UserId;
+    console.log("booking Data: ", data);
+    console.log("userId: ", userId);
+    console.log("userId2: ", userId2);
+    if (userId2 === 145368){
+        returnBookStatus = true;
+    } else {
+        returnBookStatus = false;
+    }
+
+  } catch (error) {
+    console.error('Fetch Error:', error.message);
+  }
+    console.log("ret book status:",returnBookStatus )
+  return returnBookStatus;
 }
 
 (async () => {
   for (let i = 1; i <= 10000; i++) {
-    console.log(`\n🔄 Loop ${i}/10`);
-//    await login();
-    jwtToken = 'eyJhbGciOiJodHRwOi8vd3d3LnczLm9yZy8yMDAxLzA0L3htbGRzaWctbW9yZSNobWFjLXNoYTI1NiIsInR5cCI6IkpXVCJ9.eyJNYXN0ZXJDb21wYW55IjoiZ2VsZWlzdXJlIiwiQXV0aGVudGljYXRpb25UeXBlIjoiUGFzc3dvcmQiLCJVc2VySWQiOiIxNDUzNjgiLCJleHAiOjE3NzI3OTk0NjcsImlzcyI6InBlcmZlY3RneW0uY29tIiwiYXVkIjoicGVyZmVjdGd5bS5jb20ifQ.8_YjhF5FY94xXUbyFMYPZRz0ZGRAI_4iHI9Io22qnc4';
+    //await login();
+    jwtToken = 'eyJhbGciOiJodHRwOi8vd3d3LnczLm9yZy8yMDAxLzA0L3htbGRzaWctbW9yZSNobWFjLXNoYTI1NiIsInR5cCI6IkpXVCJ9.eyJNYXN0ZXJDb21wYW55IjoiZ2VsZWlzdXJlIiwiQXV0aGVudGljYXRpb25UeXBlIjoiUGFzc3dvcmQiLCJVc2VySWQiOiIxNDUzNjgiLCJleHAiOjE3NzMwNjc4MjgsImlzcyI6InBlcmZlY3RneW0uY29tIiwiYXVkIjoicGVyZmVjdGd5bS5jb20ifQ.QjLnE4It8SkL-CWcDi44jS3D_gFLPBkB6jmTVl35atg';
 
     console.log('Processing schedule:');
     const now = new Date();
@@ -262,7 +296,7 @@ console.log(JSON.stringify(filteredClasses, null, 2));
           console.log(` - Target Date for class: formattedDate = ${formattedDate}`);
           console.log(` - Target Date for class: formattedTime = ${formattedTime}`);
           eventName = entry.name || "Unknown Event";
-          const url = 'https://geleisure.perfectgym.com.au/clientportal2/Classes/ClassCalendar/DailyClasses';
+          let url = 'https://geleisure.perfectgym.com.au/clientportal2/Classes/ClassCalendar/DailyClasses';
           let payload = {
               clubId: 1,
               date: formattedDate, // two days date
@@ -272,8 +306,36 @@ console.log(JSON.stringify(filteredClasses, null, 2));
               activityCategoryId: null,
               zoneId: null
             };
-            classId = await fetchGymClasses(url, payload);
-            console.log(` - Class ID for booking: ${classId}`);
+            let responseData = await fetchGymClasses(url, payload);
+            let classData = JSON.parse(responseData);
+            let classBookingId = classData[0].classId;
+            let classBookingStatus = classData[0].status;
+            console.log("classId: ", classBookingId);
+            console.log("classStatus: ", classBookingStatus);
+            if (classBookingStatus === "Bookable"){
+                // book class
+                console.log("book class: ", classBookingId, " - Status: ", classBookingStatus  )
+                let bookingStatus = false;
+                console.log("bookingStatus: ", bookingStatus)
+                while (!bookingStatus){ // while we havent yet books, we will keep trying every minute
+                    //await new Promise(r => setTimeout(r, 60000));
+                    await new Promise(r => setTimeout(r, 5000));
+                    payload = {
+                        classId:classBookingId,
+                        clubId:1
+                    };
+                    console.log("payload: ", payload);
+                    url = 'https://geleisure.perfectgym.com.au/clientportal2/Classes/ClassCalendar/BookClass';
+                    bookingStatus = await bookGymClass(url, payload);                    
+                    console.log("bookingStatus: ", bookingStatus);
+                                process.exit(0); // Exit after processing the relevant entry
+
+                }
+
+            }
+            //console.log(` - Class ID for booking: ${classData[0].classId}`);
+            //console.log(` - Class Status for booking: ${classData[0].status}`);
+       
             process.exit(0); // Exit after processing the relevant entry
 
         }

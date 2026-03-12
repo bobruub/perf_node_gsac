@@ -1,7 +1,7 @@
 [
 {"checkday":"saturday","checkTime":"19:30","weekday":"monday","startTime":"09:30:00"},
 {"checkday":"sunday","checkTime":"19:15","weekday":"tuesday","startTime":"17:15:00"},
-{"checkday":"monday","checkTime":"11:30","weekday":"wednesday","startTime":"09:30:00"},
+{"checkday":"monday","checkTime":"18:00","weekday":"wednesday","startTime":"08:30:00","name":"Qigong"},
 {"checkday":"tuesday","checkTime":"11:30","weekday":"thursday","startTime":"09:30:00"},
 {"checkday":"wednesday","checkTime":"11:30","weekday":"friday","startTime":"09:30:00"},
 {"checkday":"thursday","checkTime":"11:30","weekday":"saturday","startTime":"09:30:00"},
