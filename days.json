@@ -1,9 +1,11 @@
 [
-{"checkday":"saturday","checkTime":"19:30","weekday":"monday","startTime":"09:30:00"},
-{"checkday":"sunday","checkTime":"19:15","weekday":"tuesday","startTime":"17:15:00"},
+{"checkday":"saturday","checkTime":"09:30","weekday":"monday","startTime":"07:30:00","name":"Aqua Fitness"},
+{"checkday":"saturday","checkTime":"21:15","weekday":"monday","startTime":"19:15:00","name":"Aqua HIIT"},
+{"checkday":"sunday","checkTime":"19:15","weekday":"tuesday","startTime":"17:15:00","name":"RPM"},
 {"checkday":"monday","checkTime":"18:00","weekday":"wednesday","startTime":"08:30:00","name":"Qigong"},
-{"checkday":"tuesday","checkTime":"11:30","weekday":"thursday","startTime":"09:30:00"},
-{"checkday":"wednesday","checkTime":"11:30","weekday":"friday","startTime":"09:30:00"},
-{"checkday":"thursday","checkTime":"11:30","weekday":"saturday","startTime":"09:30:00"},
-{"checkday":"friday","checkTime":"15:15","weekday":"sunday","startTime":"09:30:00","name":"The Trip"}
+{"checkday":"tuesday","checkTime":"11:30","weekday":"thursday","startTime":"09:30:00","name":"RPM"},
+{"checkday":"wednesday","checkTime":"11:30","weekday":"friday","startTime":"09:30:00","name":"RPM"},
+{"checkday":"thursday","checkTime":"11:30","weekday":"saturday","startTime":"09:30:00","name":"RPM"},
+{"checkday":"friday","checkTime":"19:30","weekday":"sunday","startTime":"08:30:00","name":"RPM"},
+{"checkday":"friday","checkTime":"20:00","weekday":"sunday","startTime":"09:30:00","name":"The Trip"}
 ]
