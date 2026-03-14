@@ -57,15 +57,16 @@ let filteredClasses = []; // Store filtered classes for the target event
 let mailOptions = null; // Store email options for notifications
 let classBookingStatus = null; // Store the booking status of the class
 let userUserId = null; // Store the user ID for booking verification
+let userClubid = null; // Store the club ID for booking verification
 
 async function login() {
 	if (lastLoginTimestamp) {
 		const now = new Date().getTime();
 		const last = new Date(lastLoginTimestamp).getTime();
-		const twentyFourHours = 24 * 60 * 60 * 1000;
+		const twentyFourHours = 7 * 60 * 60 * 1000;
 
 		if (now - last < twentyFourHours) {
-			console.log('Skipping login: Less than 24 hours have passed since the last successful login.');
+			console.log('\tSkipping login: Less than 7 hours have passed since the last successful login.');
 			return;
 		}
 	}
@@ -94,7 +95,8 @@ async function login() {
 	const responseText = await responseClone.text();
     const jsonResponse = JSON.parse(responseText);
     userUserId = jsonResponse.User.Member.Id;
-		
+	userClubid = jsonResponse.User.Member.DefaultClubId;
+
 	if (response.status >= 400) {
 		const errorBody = await response.text();
 		throw new Error(`HTTP error! status: ${response.status} ${response.statusText}\nServer Response: ${errorBody}`);
@@ -251,11 +253,15 @@ const transporter = nodemailer.createTransport({
 		const now = new Date();
 		const timeZone = 'Australia/Melbourne';
 		const currentDay = now.toLocaleDateString('en-US', { weekday: 'long', timeZone }).toLowerCase();
-		const nowAEDT = new Date(now.toLocaleString('en-US', { timeZone }));
+		let nowAEDT = new Date(now.toLocaleString('en-US', { timeZone }));
 
 		for (const entry of schedule) {
-			console.log(`Checking Class: ${entry.name} on ${entry.weekday} at ${entry.startTime}`);
+        
+            console.log(`Checking Class: ${entry.name} on ${entry.weekday} at ${entry.startTime}`);
 			if (entry.checkday.toLowerCase() === currentDay) {
+                await login();
+		        //jwtToken = 'eyJhbGciOiJodHRwOi8vd3d3LnczLm9yZy8yMDAxLzA0L3htbGRzaWctbW9yZSNobWFjLXNoYTI1NiIsInR5cCI6IkpXVCJ9.eyJNYXN0ZXJDb21wYW55IjoiZ2VsZWlzdXJlIiwiQXV0aGVudGljYXRpb25UeXBlIjoiUGFzc3dvcmQiLCJVc2VySWQiOiIxNDUzNjgiLCJleHAiOjE3NzM0MDY2MjUsImlzcyI6InBlcmZlY3RneW0uY29tIiwiYXVkIjoicGVyZmVjdGd5bS5jb20ifQ.rKNtNwGmXVF-950sOgIdoADF63u63FJqtkTzEtFtank';
+		
 				console.log(`\tChecking Time: ${entry.checkday} at ${entry.checkTime} now ${nowAEDT.toString()}`);
 				let [hours, minutes] = entry.startTime.split(':').map(Number);
 				const classTime = new Date(nowAEDT);
@@ -267,7 +273,7 @@ const transporter = nodemailer.createTransport({
 				checkTime.setHours(hours, minutes, 0, 0);
 				//      console.log('\tCheck time (AEDT):', checkTime.toString());
 
-				// get now plus 15 minutes
+				// get now plus and minus 5 minutes
 				const initialDateStr = checkTime.toString();
 				const dateAfter = new Date(initialDateStr);
 				dateAfter.setMinutes(dateAfter.getMinutes() + 5);
@@ -314,7 +320,7 @@ const transporter = nodemailer.createTransport({
 					}
 					let url = 'https://geleisure.perfectgym.com.au/clientportal2/Classes/ClassCalendar/DailyClasses';
 					let payload = {
-						clubId: 1,
+						clubId: userClubid,
 						date: formattedDate, // two days date
 						categoryId: null,
 						timeTableId: null,
@@ -325,6 +331,10 @@ const transporter = nodemailer.createTransport({
 					console.log("\t\tChecking class: ", entry.name + " - " + entry.weekday + " " + entry.startTime);
 					let responseData = await fetchGymClasses(url, payload);
 					let classData = JSON.parse(responseData);
+					if (!classData || classData.length === 0) {
+						console.log('\t\tNo classes found for this entry.');
+						continue;
+					}
 					let classBookingId = classData[0].classId;
 					classBookingStatus = classData[0].status;
 					console.log("\t\tclassStatus: ", classBookingStatus);
@@ -332,13 +342,14 @@ const transporter = nodemailer.createTransport({
 					if (classBookingStatus === "Bookable") {
 						// book class
 						let bookingStatus = false;
+                        let attempts = 0;
 
 						while (!bookingStatus) { // while we havent yet books, we will keep trying every minute
 							//await new Promise(r => setTimeout(r, 60000));
-							await new Promise(r => setTimeout(r, 5000));
+							
 							payload = {
 								classId: classBookingId,
-								clubId: 1
+								clubId: userClubid
 							};
 							//console.log("payload: ", payload);
 							url = 'https://geleisure.perfectgym.com.au/clientportal2/Classes/ClassCalendar/BookClass';
@@ -368,14 +379,32 @@ const transporter = nodemailer.createTransport({
 							}
 
 							//    process.exit(0); // Exit after processing the relevant entry
+                            await new Promise(r => setTimeout(r, 60000));
+                            attempts++;
+                            if (attempts >= 12) {
+                                console.log('\t\tMax booking attempts reached. Moving to next entry.');
+                                mailOptions = {
+									from: '"Gsac Booking" <bobruub@gmail.com>',
+									to: loginAddress, // Send to the SMTP email address
+									subject: 'Class NOT Booked - ' + eventName + ' - ' + entry.weekday + ' ' + entry.startTime,
+									text: 'Class NOT Booked - ' + eventName + ' - ' + entry.weekday + ' ' + entry.startTime
+								};
+								//console.log('Email details:', mailOptions);
 
-						}
+								try {
+									const info = await transporter.sendMail(mailOptions);
+									console.log('\t\tEmail sent successfully to:', loginAddress);
+									console.log('\t\tClass NOT Booked - ' + eventName + ' - ' + entry.weekday + ' ' + entry.startTime);
+
+								} catch (error) {
+									console.error('Error sending email:', error);
+								}
+                                break;
+						
+                            }
+                        }
 
 					}
-					//console.log(` - Class ID for booking: ${classData[0].classId}`);
-					//console.log(` - Class Status for booking: ${classData[0].status}`);
-
-					//process.exit(0); // Exit after processing the relevant entry
 
 				}
 			}
