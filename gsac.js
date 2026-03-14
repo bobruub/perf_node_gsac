@@ -30,6 +30,7 @@ try {
 	console.error('Error reading days.json:', err.message);
 }
 
+// setup login details, defaults to me :)
 const loginAddress = process.env.GESAC_LOGIN ? process.env.GESAC_LOGIN.trim() : "tim@cyberlanes.com.au";
 const loginPassword = process.env.GESAC_PASSWORD ? process.env.GESAC_PASSWORD.trim() : "Leeroyx1966";
 const credentials = {
@@ -37,22 +38,25 @@ const credentials = {
 	"Login": loginAddress,
 	"Password": loginPassword
 };
-
-const smtpEmailAddress = 'bobruub@gmail.com'; // This should be the same as credentials.Login or another email you want to receive notifications at.
-const emailPassword = 'nrui afwh eerz ocoi'; // This should be a 16-character app password for Gmail, not your regular email password.
 console.log('Using credentials for:' + loginAddress);
-
 if (!credentials.Login || !credentials.Password) {
 	console.error("⚠️  MISSING CREDENTIALS: Ensure GESAC_LOGIN and GESAC_PASSWORD are set.");
 	process.exit(1);
 }
 
+// setup details to send an email.
+const smtpEmailAddress = 'bobruub@gmail.com'; // This should be the same as credentials.Login or another email you want to receive notifications at.
+const emailPassword = 'nrui afwh eerz ocoi'; // This should be a 16-character app password for Gmail, not your regular email password.
+
+// set all the variables to be essentially global within the script, 
+// this is to avoid having to pass them around between functions and 
+// to keep track of the state of the script.
+// super lazy but here we are.
 let lastLoginTimestamp = null;
 let jwtToken = null; // Store JWT token for authenticated requests
 let formattedDate = null; // Store formatted date for class queries
 let formattedTime = null; // Store formatted time for class queries
 let eventName = null; // Store event name for class queries
-let classId = null; // Store class ID for booking
 let filteredClasses = []; // Store filtered classes for the target event
 let mailOptions = null; // Store email options for notifications
 let classBookingStatus = null; // Store the booking status of the class
@@ -60,6 +64,8 @@ let userUserId = null; // Store the user ID for booking verification
 let userClubid = null; // Store the club ID for booking verification
 
 async function login() {
+    // if you've already logged in over the last 7 hours no need to do again as the token is valid for 8 hours, this is to avoid unnecessary logins and potential rate limiting.
+    // stops issues with too many logins
 	if (lastLoginTimestamp) {
 		const now = new Date().getTime();
 		const last = new Date(lastLoginTimestamp).getTime();
@@ -94,6 +100,8 @@ async function login() {
 	const responseClone = response.clone();
 	const responseText = await responseClone.text();
     const jsonResponse = JSON.parse(responseText);
+    
+    // extract user details form the respones
     userUserId = jsonResponse.User.Member.Id;
 	userClubid = jsonResponse.User.Member.DefaultClubId;
 
@@ -128,9 +136,7 @@ async function login() {
 		console.log('\n✅ Login Successful!');
 		const loginTimestamp = new Date().toISOString();
 		lastLoginTimestamp = loginTimestamp;
-		console.log('Timestamp:', loginTimestamp);
-		if (jwtToken) console.log('JWT Token:', jwtToken);
-		if (hasAuthCookie) console.log('Auth Cookie detected (CpAuthToken).');
+		if (jwtToken) console.log('\tJWT Token:', jwtToken);
 	} else {
 		console.log('\n⚠️ Login might have failed. No jwt-token header or CpAuthToken cookie found.');
 		if (responseBody) {
@@ -139,9 +145,6 @@ async function login() {
 		}
 	}
 
-	if (cookies) {
-		console.log('\nCookies received:', cookies);
-	}
 }
 
 async function fetchGymClasses(url, payload) {
@@ -222,7 +225,6 @@ async function bookGymClass(url, payload) {
 
 		const data = await response.json();
 		const jsonData = JSON.stringify(data);
-		const userId = jsonData.UserId;
 		const userId2 = data.UserId;
 		if (userId2 === userUserId) {
 			returnBookStatus = true;
@@ -248,20 +250,20 @@ const transporter = nodemailer.createTransport({
 (async () => {
 	for (;;) {
 		await login();
-		//jwtToken = 'eyJhbGciOiJodHRwOi8vd3d3LnczLm9yZy8yMDAxLzA0L3htbGRzaWctbW9yZSNobWFjLXNoYTI1NiIsInR5cCI6IkpXVCJ9.eyJNYXN0ZXJDb21wYW55IjoiZ2VsZWlzdXJlIiwiQXV0aGVudGljYXRpb25UeXBlIjoiUGFzc3dvcmQiLCJVc2VySWQiOiIxNDUzNjgiLCJleHAiOjE3NzM0MDY2MjUsImlzcyI6InBlcmZlY3RneW0uY29tIiwiYXVkIjoicGVyZmVjdGd5bS5jb20ifQ.rKNtNwGmXVF-950sOgIdoADF63u63FJqtkTzEtFtank';
-
+		
 		const now = new Date();
 		const timeZone = 'Australia/Melbourne';
 		const currentDay = now.toLocaleDateString('en-US', { weekday: 'long', timeZone }).toLowerCase();
 		let nowAEDT = new Date(now.toLocaleString('en-US', { timeZone }));
 
+        // loop through days.json and find any entries that match the current day, then check if the time is within 5 minutes of the check time, if it is then we will attempt to book the class.
 		for (const entry of schedule) {
         
             console.log(`Checking Class: ${entry.name} on ${entry.weekday} at ${entry.startTime}`);
+            // if the entry checkday matches the current day, then we will check if the time is within 5 minutes of the check time, if it is then we will attempt to book the class.
 			if (entry.checkday.toLowerCase() === currentDay) {
                 await login();
-		        //jwtToken = 'eyJhbGciOiJodHRwOi8vd3d3LnczLm9yZy8yMDAxLzA0L3htbGRzaWctbW9yZSNobWFjLXNoYTI1NiIsInR5cCI6IkpXVCJ9.eyJNYXN0ZXJDb21wYW55IjoiZ2VsZWlzdXJlIiwiQXV0aGVudGljYXRpb25UeXBlIjoiUGFzc3dvcmQiLCJVc2VySWQiOiIxNDUzNjgiLCJleHAiOjE3NzM0MDY2MjUsImlzcyI6InBlcmZlY3RneW0uY29tIiwiYXVkIjoicGVyZmVjdGd5bS5jb20ifQ.rKNtNwGmXVF-950sOgIdoADF63u63FJqtkTzEtFtank';
-		
+		    
 				console.log(`\tChecking Time: ${entry.checkday} at ${entry.checkTime} now ${nowAEDT.toString()}`);
 				let [hours, minutes] = entry.startTime.split(':').map(Number);
 				const classTime = new Date(nowAEDT);
@@ -271,34 +273,21 @@ const transporter = nodemailer.createTransport({
 				[hours, minutes] = entry.checkTime.split(':').map(Number);
 				const checkTime = new Date(nowAEDT);
 				checkTime.setHours(hours, minutes, 0, 0);
-				//      console.log('\tCheck time (AEDT):', checkTime.toString());
-
+		
 				// get now plus and minus 5 minutes
 				const initialDateStr = checkTime.toString();
 				const dateAfter = new Date(initialDateStr);
 				dateAfter.setMinutes(dateAfter.getMinutes() + 5);
 				const dateBefore = new Date(initialDateStr);
 				dateBefore.setMinutes(dateBefore.getMinutes() - 5);
-				//console.log('\tCheck time (AEDT):', checkTime.toString());
-				//console.log('         Now (AEDT):', nowAEDT.toString());
-				//console.log("\t 5 minutes before:", dateBefore.toString());
-				//console.log("\t  5 minutes after:", dateAfter.toString());
-				//console.log('\n');
 
+                // if the current time is within 5 minutes of the check time, then we will attempt to book the class.
 				if (nowAEDT > dateBefore && nowAEDT < dateAfter) {
 					classBookingStatus = "notBooked";
 					console.log(`\t\tProcessing Class: ${entry.name} on ${entry.weekday} at ${entry.startTime}`);
 					console.log(`\t\tProcessing Time: ${entry.checkday} at ${entry.checkTime}`);
-
-					//console.log(`\t\t- Checking ${entry.weekday} at ${entry.startTime}`);
-					// now get eh classes for two days in advance to ensure we have the latest data
-					const targetDate = new Date(nowAEDT);
+                	const targetDate = new Date(nowAEDT);
 					targetDate.setDate(targetDate.getDate() + 2);
-					const targetDay = targetDate.toLocaleDateString('en-US', { weekday: 'long', timeZone }).toLowerCase();
-					//console.log(`\t\t- Target day for class data: ${targetDay} (${targetDate.toString()})`);
-					// call daily classes for that day to ensure we have the latest data
-
-					// The input date string
 					const dateStr = targetDate.toString();
 
 					// 1. Parse the string into a Date object
@@ -307,14 +296,11 @@ const transporter = nodemailer.createTransport({
 					const year = date.getFullYear();
 					const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
 					const day = String(date.getDate()).padStart(2, '0');
-
 					formattedDate = `${year}-${month}-${day}`;
 					formattedTime = `${year}-${month}-${day}T${entry.startTime}`;
-
-					//console.log(`\t\t - Target Date for class: formattedDate = ${formattedDate}`);
-					//console.log(`\t\t - Target Date for class: formattedTime = ${formattedTime}`);
 					eventName = entry.name || "Unknown Event";
-
+                    // if it's already book then skip trying to book again, 
+                    // this is to avoid unnecessary booking attempts and potential issues with the booking system.    
 					if (classBookingStatus === "Booked") {
 						break;
 					}
@@ -338,24 +324,25 @@ const transporter = nodemailer.createTransport({
 					let classBookingId = classData[0].classId;
 					classBookingStatus = classData[0].status;
 					console.log("\t\tclassStatus: ", classBookingStatus);
-
+                    // if the class is bookable then we will attempt to book the class, 
+                    // if it's not bookable then we will skip to the next entry, 
+                    // this is to avoid unnecessary booking attempts and potential issues with the booking system. 
 					if (classBookingStatus === "Bookable") {
-						// book class
+						
 						let bookingStatus = false;
                         let attempts = 0;
 
 						while (!bookingStatus) { // while we havent yet books, we will keep trying every minute
-							//await new Promise(r => setTimeout(r, 60000));
 							
 							payload = {
 								classId: classBookingId,
 								clubId: userClubid
 							};
-							//console.log("payload: ", payload);
 							url = 'https://geleisure.perfectgym.com.au/clientportal2/Classes/ClassCalendar/BookClass';
 							bookingStatus = await bookGymClass(url, payload);
 							console.log("\t\tbookingStatus: ", bookingStatus);
-							if (bookingStatus) {
+                            // if the booking was successful then we will send an email notification
+                            if (bookingStatus) {
 								console.log('\t\tAttempting to send email notification for booking to: ', loginAddress);
 
 								mailOptions = {
@@ -364,7 +351,6 @@ const transporter = nodemailer.createTransport({
 									subject: 'Class Booked - ' + eventName + ' - ' + entry.weekday + ' ' + entry.startTime,
 									text: 'Class Booked - ' + eventName + ' - ' + entry.weekday + ' ' + entry.startTime
 								};
-								//console.log('Email details:', mailOptions);
 
 								try {
 									const info = await transporter.sendMail(mailOptions);
@@ -377,10 +363,15 @@ const transporter = nodemailer.createTransport({
 								break; // Exit the booking loop once successful
 
 							}
-
-							//    process.exit(0); // Exit after processing the relevant entry
+                            // pause for a minute before trying again to avoid spamming the booking endpoint and to give it time to update the booking status, 
+                            // if we keep trying too fast it may cause issues with the booking system or get us rate limited.
                             await new Promise(r => setTimeout(r, 60000));
                             attempts++;
+                            // if we have attempted to book 12 times (about 12 minutes) and still haven't succeeded, 
+                            // then we will assume something is wrong and send an email notification about the failure, 
+                            // then move on to the next entry, 
+                            // this is to avoid getting stuck on one entry and to ensure we are notified of 
+                            // potential issues with the booking system.    
                             if (attempts >= 12) {
                                 console.log('\t\tMax booking attempts reached. Moving to next entry.');
                                 mailOptions = {
@@ -389,8 +380,7 @@ const transporter = nodemailer.createTransport({
 									subject: 'Class NOT Booked - ' + eventName + ' - ' + entry.weekday + ' ' + entry.startTime,
 									text: 'Class NOT Booked - ' + eventName + ' - ' + entry.weekday + ' ' + entry.startTime
 								};
-								//console.log('Email details:', mailOptions);
-
+								
 								try {
 									const info = await transporter.sendMail(mailOptions);
 									console.log('\t\tEmail sent successfully to:', loginAddress);
@@ -410,7 +400,7 @@ const transporter = nodemailer.createTransport({
 			}
 		}
 
-		// Small delay between requests
+		// Small delay between days requests.
 		await new Promise(r => setTimeout(r, 60000));
 	}
 })().catch(console.error);

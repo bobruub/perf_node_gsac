@@ -1,0 +1,9 @@
+[
+{"checkday":"saturday","checkTime":"09:30","weekday":"monday","startTime":"07:30:00","name":"Aqua Fitness"},
+{"checkday":"saturday","checkTime":"21:15","weekday":"monday","startTime":"19:15:00","name":"Aqua HIIT"},
+{"checkday":"sunday","checkTime":"09:30","weekday":"tuesday","startTime":"07:30:00","name":"Aqua Fitness"},
+{"checkday":"monday","checkTime":"21:15","weekday":"wednesday","startTime":"19:15:00","name":"Aqua HIIT"},
+{"checkday":"tuesday","checkTime":"09:30","weekday":"thursday","startTime":"07:30:00","name":"Aqua Fitness"},
+{"checkday":"wednesday","checkTime":"09:30","weekday":"friday","startTime":"07:30:00","name":"Aqua Fitness"},
+{"checkday":"thursday","checkTime":"09:10","weekday":"saturday","startTime":"07:10:00","name":"Aqua Fitness"}
+]
