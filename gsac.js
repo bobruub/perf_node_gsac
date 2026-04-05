@@ -82,14 +82,6 @@ if (!process.env.SMTP_EMAIL_PASSWORD) {
 
 }
 
-console.log("emailAddress: " + smtpEmailAddress);
-
-console.log("emailPassword: " + emailPassword);
-
-process.exit(1);
-
-// setup details to send an email.
-
 // set all the variables to be essentially global within the script, 
 // this is to avoid having to pass them around between functions and 
 // to keep track of the state of the script.
@@ -459,6 +451,8 @@ const transporter = nodemailer.createTransport({
 
 					}
 
+				} else {
+					console.log("\t\Skipping class: ", entry.name + " - " + entry.weekday + " " + entry.startTime);
 				}
 			}
 		}
