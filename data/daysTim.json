@@ -1,0 +1,13 @@
+[
+{"checkday":"saturday","checkTime":"09:30","weekday":"monday","startTime":"07:30:00","name":"Aqua Fitness","clubId":"1"},
+{"checkday":"saturday","checkTime":"21:15","weekday":"monday","startTime":"19:15:00","name":"Aqua HIIT","clubId":"1"},
+{"checkday":"sunday","checkTime":"09:30","weekday":"tuesday","startTime":"07:30:00","name":"Aqua Fitness","clubId":"1"},
+{"checkday":"sunday","checkTime":"23:00","weekday":"tuesday","startTime":"21:00:00","name":"Reformer Foundation","clubId":"1"},
+{"checkday":"monday","checkTime":"21:15","weekday":"wednesday","startTime":"19:15:00","name":"Aqua HIIT","clubId":"1"},
+{"checkday":"tuesday","checkTime":"09:30","weekday":"thursday","startTime":"07:30:00","name":"Aqua Fitness","clubId":"1"},
+{"checkday":"tuesday","checkTime":"17:00","weekday":"thursday","startTime":"19:00:00","name":"Reformer Progression","clubId":"1"},
+{"checkday":"wednesday","checkTime":"09:30","weekday":"friday","startTime":"07:30:00","name":"Aqua Fitness","clubId":"1"},
+{"checkday":"thursday","checkTime":"09:10","weekday":"saturday","startTime":"07:10:00","name":"Aqua Fitness","clubId":"1"},
+{"checkday":"thursday","checkTime":"12:30","weekday":"saturday","startTime":"10:30:00","name":"Reformer Foundation","clubId":"1"},
+{"checkday":"friday","checkTime":"12:30","weekday":"sunday","startTime":"10:30:00","name":"Reformer Progression","clubId":"1"}
+]
