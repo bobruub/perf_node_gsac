@@ -11,7 +11,7 @@ RUN mkdir -p /app/data
 # Copy package files and install dependencies
 COPY package.json package-lock.json ./
 RUN npm install
-run npm install dotenv
+RUN npm install dotenv
 
 # Copy the script and schedule file
 COPY gsac.js ./
