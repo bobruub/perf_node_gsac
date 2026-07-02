@@ -33,6 +33,8 @@ try {
 	console.log('Loaded schedule:', schedule);
 } catch (err) {
 	console.error('Error reading days.json:', err.message);
+	process.exit(1);
+	
 }
 
 let loginAddress = null;
