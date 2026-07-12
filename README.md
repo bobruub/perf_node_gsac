@@ -35,7 +35,7 @@ A Node.js script to automate booking gym classes on geleisure.perfectgym.com.au.
 
 4. Run the docker image
 ```
-docker run --rm -v ./data:/app/data -e GESAC_LO^CN=tim@cyberlanes.com.au -e GESAC_PASSWORD=Leeroyx1966 -e FILE_NAME=daysTim.json --name gsac_booker gsac
+docker run --rm -v ./data:/app/data -e GESAC_LOGIN=username -e GESAC_PASSWORD=password -e FILE_NAME=daysTim.json --name gsac_booker gsac
 ```
 
 ## Configuration
