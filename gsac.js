@@ -33,8 +33,6 @@ try {
 	console.log('Loaded schedule:', schedule);
 } catch (err) {
 	console.error('Error reading days.json:', err.message);
-	process.exit(1);
-	
 }
 
 let loginAddress = null;
@@ -68,6 +66,7 @@ if (!credentials.Login || !credentials.Password) {
 let smtpEmailAddress = null;
 let emailPassword = null;
 
+console.log('process.env.SMTP_EMAIL_ADDRESS: ' + process.env.SMTP_EMAIL_ADDRESS);
 if (!process.env.SMTP_EMAIL_ADDRESS) {
 	console.error("⚠️  MISSING CREDENTIALS: Ensure SMTP_EMAIL_ADDRESS is set");
 	process.exit(1);
@@ -83,6 +82,8 @@ if (!process.env.SMTP_EMAIL_PASSWORD) {
 	emailPassword = process.env.SMTP_EMAIL_PASSWORD.trim();
 
 }
+
+console.log('smtpEmailAddress: ' + smtpEmailAddress + ' emailPassword: ' + emailPassword);
 
 // set all the variables to be essentially global within the script, 
 // this is to avoid having to pass them around between functions and 
@@ -275,6 +276,7 @@ async function bookGymClass(url, payload) {
 }
 
 // Create a transporter object using the default SMTP transport
+console.log('smtpEmailAddress: ' + smtpEmailAddress + ' emailPassword: ' + emailPassword);
 const transporter = nodemailer.createTransport({
 	service: 'gmail',
 	auth: {
@@ -295,12 +297,11 @@ const transporter = nodemailer.createTransport({
         // loop through days.json and find any entries that match the current day, then check if the time is within 5 minutes of the check time, if it is then we will attempt to book the class.
 		for (const entry of schedule) {
         
-            console.log(`Checking Class: ${entry.name} on ${entry.weekday} at ${entry.startTime}`);
+            //console.log(`Checking Class: ${entry.name} on ${entry.weekday} at ${entry.startTime}`);
             // if the entry checkday matches the current day, then we will check if the time is within 5 minutes of the check time, if it is then we will attempt to book the class.
 			if (entry.checkday.toLowerCase() === currentDay) {
                 await login();
 		    
-				console.log(`\tChecking Time: ${entry.checkday} at ${entry.checkTime} now ${nowAEDT.toString()}`);
 				let [hours, minutes] = entry.startTime.split(':').map(Number);
 				const classTime = new Date(nowAEDT);
 				classTime.setHours(hours, minutes, 0, 0);
@@ -319,10 +320,12 @@ const transporter = nodemailer.createTransport({
 
                 // if the current time is within 5 minutes of the check time, then we will attempt to book the class.
 				if (nowAEDT > dateBefore && nowAEDT < dateAfter) {
+            				console.log(`Checking Class: ${entry.name} on ${entry.weekday} at ${entry.startTime}`);
+					console.log(`\tChecking Time: ${entry.checkday} at ${entry.checkTime} now ${nowAEDT.toString()}`);
 					classBookingStatus = "notBooked";
 					console.log(`\t\tProcessing Class: ${entry.name} on ${entry.weekday} at ${entry.startTime}`);
 					console.log(`\t\tProcessing Time: ${entry.checkday} at ${entry.checkTime}`);
-                	const targetDate = new Date(nowAEDT);
+                			const targetDate = new Date(nowAEDT);
 					targetDate.setDate(targetDate.getDate() + 2);
 					const dateStr = targetDate.toString();
 
