@@ -20,7 +20,7 @@ if (!globalThis.fetch) {
 
 const LOGIN_URL = 'https://geleisure.perfectgym.com.au/clientportal2/Auth/Login';
 
-const jsonFileName = process.env.FILE_NAME ? process.env.FILE_NAME.trim() : "days.json";
+const jsonFileName = process.env.FILE_NAME ? process.env.FILE_NAME.trim() : "schedule.json";
 
 // Load schedule from days.json
 let schedule = [];
@@ -45,7 +45,7 @@ if (!process.env.GESAC_LOGIN) {
 	loginAddress = process.env.GESAC_LOGIN.trim();
 }
 if (!process.env.GESAC_PASSWORD) {
- 	console.error("Missing GESAC_LOGIN in .env file or on command line");
+ 	console.error("Missing GESAC_PASSWORD in .env file or on command line");
   	process.exit(1);
 } else {
 	loginPassword = process.env.GESAC_PASSWORD.trim();
@@ -62,27 +62,9 @@ if (!credentials.Login || !credentials.Password) {
 	process.exit(1);
 }
 
-let smtpEmailAddress = null;
-let emailPassword = null;
-
-//console.log('process.env.SMTP_EMAIL_ADDRESS: ' + process.env.SMTP_EMAIL_ADDRESS);
-if (!process.env.SMTP_EMAIL_ADDRESS) {
-	console.error("⚠️  MISSING CREDENTIALS: Ensure SMTP_EMAIL_ADDRESS is set");
-	process.exit(1);
-} else {
-	smtpEmailAddress = process.env.SMTP_EMAIL_ADDRESS.trim();
-
-}
-
-if (!process.env.SMTP_EMAIL_PASSWORD) {
-	console.error("⚠️  MISSING CREDENTIALS: Ensure SMTP_EMAIL_PASSWORD is set");
-	process.exit(1);
-} else {
-	emailPassword = process.env.SMTP_EMAIL_PASSWORD.trim();
-
-}
-
-//console.log('smtpEmailAddress: ' + smtpEmailAddress + ' emailPassword: ' + emailPassword);
+const smtpEmailAddress = process.env.smtpEmailAddress || "bobruub@gmail.com";
+const emailPassword = process.env.emailPassword || "qttl mugy jbou rwcf";
+console.log('smtpEmailAddress: ' + smtpEmailAddress + ' emailPassword: ' + emailPassword);
 
 // set all the variables to be essentially global within the script, 
 // this is to avoid having to pass them around between functions and 
