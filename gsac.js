@@ -27,7 +27,6 @@ let schedule = [];
 try {
 	const daysPath = path.join(__dirname, "data", jsonFileName);
 	console.log(`Loading schedule from: ${daysPath}`);
-	
 	const daysContent = fs.readFileSync(daysPath, 'utf8');
 	schedule = JSON.parse(daysContent);
 	console.log('Loaded schedule:', schedule);
@@ -66,7 +65,7 @@ if (!credentials.Login || !credentials.Password) {
 let smtpEmailAddress = null;
 let emailPassword = null;
 
-console.log('process.env.SMTP_EMAIL_ADDRESS: ' + process.env.SMTP_EMAIL_ADDRESS);
+//console.log('process.env.SMTP_EMAIL_ADDRESS: ' + process.env.SMTP_EMAIL_ADDRESS);
 if (!process.env.SMTP_EMAIL_ADDRESS) {
 	console.error("⚠️  MISSING CREDENTIALS: Ensure SMTP_EMAIL_ADDRESS is set");
 	process.exit(1);
@@ -83,7 +82,7 @@ if (!process.env.SMTP_EMAIL_PASSWORD) {
 
 }
 
-console.log('smtpEmailAddress: ' + smtpEmailAddress + ' emailPassword: ' + emailPassword);
+//console.log('smtpEmailAddress: ' + smtpEmailAddress + ' emailPassword: ' + emailPassword);
 
 // set all the variables to be essentially global within the script, 
 // this is to avoid having to pass them around between functions and 
@@ -109,12 +108,12 @@ async function login() {
 		const twentyFourHours = 7 * 60 * 60 * 1000;
 
 		if (now - last < twentyFourHours) {
-			console.log('\tSkipping login: Less than 7 hours have passed since the last successful login.');
+//			console.log('\tSkipping login: Less than 7 hours have passed since the last successful login.');
 			return;
 		}
 	}
 
-	console.log(`Attempting login to: ${LOGIN_URL}`);
+	//console.log(`Attempting login to: ${LOGIN_URL}`);
 
 	const response = await fetch(LOGIN_URL, {
 		method: 'POST',
@@ -133,7 +132,7 @@ async function login() {
 		body: JSON.stringify(credentials)
 	});
 
-	console.log('Response Status Code:', response.status);
+//	console.log('Response Status Code:', response.status);
 	const responseClone = response.clone();
 	const responseText = await responseClone.text();
     const jsonResponse = JSON.parse(responseText);
@@ -276,7 +275,7 @@ async function bookGymClass(url, payload) {
 }
 
 // Create a transporter object using the default SMTP transport
-console.log('smtpEmailAddress: ' + smtpEmailAddress + ' emailPassword: ' + emailPassword);
+//console.log('smtpEmailAddress: ' + smtpEmailAddress + ' emailPassword: ' + emailPassword);
 const transporter = nodemailer.createTransport({
 	service: 'gmail',
 	auth: {
@@ -297,11 +296,12 @@ const transporter = nodemailer.createTransport({
         // loop through days.json and find any entries that match the current day, then check if the time is within 5 minutes of the check time, if it is then we will attempt to book the class.
 		for (const entry of schedule) {
         
-            //console.log(`Checking Class: ${entry.name} on ${entry.weekday} at ${entry.startTime}`);
+            // console.log(`Checking Class: ${entry.name} on ${entry.weekday} at ${entry.startTime}`);
             // if the entry checkday matches the current day, then we will check if the time is within 5 minutes of the check time, if it is then we will attempt to book the class.
 			if (entry.checkday.toLowerCase() === currentDay) {
                 await login();
 		    
+			//	console.log(`\tChecking Time: ${entry.checkday} at ${entry.checkTime} now ${nowAEDT.toString()}`);
 				let [hours, minutes] = entry.startTime.split(':').map(Number);
 				const classTime = new Date(nowAEDT);
 				classTime.setHours(hours, minutes, 0, 0);
@@ -320,12 +320,10 @@ const transporter = nodemailer.createTransport({
 
                 // if the current time is within 5 minutes of the check time, then we will attempt to book the class.
 				if (nowAEDT > dateBefore && nowAEDT < dateAfter) {
-            				console.log(`Checking Class: ${entry.name} on ${entry.weekday} at ${entry.startTime}`);
-					console.log(`\tChecking Time: ${entry.checkday} at ${entry.checkTime} now ${nowAEDT.toString()}`);
 					classBookingStatus = "notBooked";
 					console.log(`\t\tProcessing Class: ${entry.name} on ${entry.weekday} at ${entry.startTime}`);
 					console.log(`\t\tProcessing Time: ${entry.checkday} at ${entry.checkTime}`);
-                			const targetDate = new Date(nowAEDT);
+                	const targetDate = new Date(nowAEDT);
 					targetDate.setDate(targetDate.getDate() + 2);
 					const dateStr = targetDate.toString();
 
@@ -346,7 +344,7 @@ const transporter = nodemailer.createTransport({
 					}
 					if (classBookingStatus === "FullBooked"){
 						console.log(`\t\tClass is full: ${entry.name} on ${entry.weekday} at ${entry.startTime}`);
-						console.log('\t\tMax booking attempts reached. Moving to next entry.');
+						//console.log('\t\tMax booking attempts reached. Moving to next entry.');
                                 mailOptions = {
 									from: '"Gsac Booking" <bobruub@gmail.com>',
 									to: loginAddress, // Send to the SMTP email address
@@ -383,7 +381,7 @@ const transporter = nodemailer.createTransport({
 					}
 					let classBookingId = classData[0].classId;
 					classBookingStatus = classData[0].status;
-					console.log("\t\tclassStatus: ", classBookingStatus);
+			//		console.log("\t\tclassStatus: ", classBookingStatus);
                     // if the class is bookable then we will attempt to book the class, 
                     // if it's not bookable then we will skip to the next entry, 
                     // this is to avoid unnecessary booking attempts and potential issues with the booking system. 
@@ -400,10 +398,10 @@ const transporter = nodemailer.createTransport({
 							};
 							url = 'https://geleisure.perfectgym.com.au/clientportal2/Classes/ClassCalendar/BookClass';
 							bookingStatus = await bookGymClass(url, payload);
-							console.log("\t\tbookingStatus: ", bookingStatus);
+							//console.log("\t\tbookingStatus: ", bookingStatus);
                             // if the booking was successful then we will send an email notification
                             if (bookingStatus) {
-								console.log('\t\tAttempting to send email notification for booking to: ', loginAddress);
+								//console.log('\t\tAttempting to send email notification for booking to: ', loginAddress);
 
 								mailOptions = {
 									from: '"Gsac Booking" <bobruub@gmail.com>',
@@ -457,7 +455,7 @@ const transporter = nodemailer.createTransport({
 					}
 
 				} else {
-					console.log("\t\Skipping class: ", entry.name + " - " + entry.weekday + " " + entry.startTime);
+					//console.log("\t\Skipping class: ", entry.name + " - " + entry.weekday + " " + entry.startTime);
 				}
 			}
 		}
